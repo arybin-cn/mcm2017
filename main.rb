@@ -3,14 +3,17 @@
 require 'pry'
 require 'csv'
 
+require './utils/object_selector'
 require './interpolator'
 require './model'
 require './simulator/virtual_machine'
+require './simulator/event_driver'
 require './simulator/monitor'
 
 include MCM
-include MCM::Simulator
 include MCM::Model
+include MCM::Utils
+include MCM::Simulator
 
 
 #Raw string data
@@ -87,45 +90,55 @@ end
   end
 end
 
-pry
-
 #Relations between models have been built from codes above.
 
-#def initialize(total_interval_count,event_interval,print_interval,route,monitor,time_scale=10)
 route = @routes.last
-total_interval_count=100
+#EventDriver (percentage_of_sdcars,target_route,total_count_of_cars,total_time)
+total_count_of_cars=50000
+percentage_of_sdcars=0.5
+total_time=1000
+total_interval_count=1000
 event_interval=1
 print_interval=1
-monitor=RoadMonitor.new(route.roads[0..1])
 
-route.roads[0..1].each do |road|
-  road.inc_lanes.each do |lane|
-    cars=[]
-    8.times do
-      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
-      car.lane=lane
-      car.position=rand(road.length)
-      cars<<car
-    end
-    lane.cars=cars
-  end
+monitor=RoadMonitor.new(route.roads[0..3])
+#monitor=nil
 
-  road.dec_lanes.each do |lane|
-    cars=[]
-    8.times do
-      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
-      car.lane=lane
-      car.position=rand(road.length)
-      cars<<car
-    end
-    lane.cars=cars
-  end
-end
+driver=CarGenerator.new(percentage_of_sdcars,route,total_count_of_cars,total_time)
 
-
-vm = VirtualMachine.new(total_interval_count,event_interval,print_interval,route,monitor)
-
+vm = VirtualMachine.new(total_interval_count,event_interval,print_interval,route,monitor,[driver])
 vm.start
+
+pry
+
+#route.roads[0..1].each do |road|
+#  road.inc_lanes.each do |lane|
+#    cars=[]
+#    8.times do
+#      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
+#      car.lane=lane
+#      car.position=rand(road.length)
+#      cars<<car
+#    end
+#    lane.cars=cars
+#  end
+#
+#  road.dec_lanes.each do |lane|
+#    cars=[]
+#    8.times do
+#      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
+#      car.lane=lane
+#      car.position=rand(road.length)
+#      cars<<car
+#    end
+#    lane.cars=cars
+#  end
+#end
+#
+#
+#vm = VirtualMachine.new(total_interval_count,event_interval,print_interval,route,monitor)
+#
+#vm.start
 
 
 
@@ -149,6 +162,3 @@ vm.start
 #end
 #lane.cars=cars
 #end
-
-
-Curses.close_screen

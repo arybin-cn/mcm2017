@@ -53,24 +53,61 @@ module MCM
           lane.update(seconds_passed)
         end
       end
+      @start_intersection.update(seconds_passed)
     end
 
   end
 
   class Model::Intersection < Model::UpdatableModel
+    include Utils
     attr_accessor :cars
     #Position in current route.
     attr_accessor :position
     attr_accessor :approaching_road,:leaving_road
+
+    def initialize
+      @cars=[]
+    end
+
+    def update(seconds_passed)
+      if @cars and @cars.size > 0
+        for car in @cars
+          inc_mp = (car.end_intersection.position>=car.start_intersection.position)
+          if inc_mp
+            #available_lane=random_select(@leaving_road.inc_lanes)
+            available_lane=@leaving_road.inc_lanes.find do |lane|
+              lane.cars.size==0 or (lane.cars.last.position-lane.cars.last.length > car.length)
+            end
+          else
+            #available_lane=random_select(@approaching_road.dec_lanes)
+            available_lane=@approaching_road.dec_lanes.find do |lane|
+              lane.cars.size==0 or (lane.road.length-lane.cars.last.position > car.length)
+            end
+          end
+          if available_lane
+            @cars.delete(car)
+            available_lane.cars<<car
+            car.lane=available_lane
+            car.position=inc_mp ? car.length : available_lane.road.length - car.length
+          end
+        end
+      end
+    end
+
   end
 
   #Lane belongs to road and has many cars on it.The length of a lane is the same with the length of the road it belongs to.
   #As the given conditions, the width of lane is standard, so we dont consider width of lane here.
-  #Insteand, we assume that a lane is always suitable for one car on parallel.
+  #Insteand, we assume that a lane is always suitable for one car in parallel.
   class Model::Lane < Model::UpdatableModel
     attr_accessor :road,:cars
     #true for INC-MP direction and false for DEC-MP direction.
     attr_accessor :inc_mp
+
+    def initialize
+      @cars=[]
+    end
+
 
     %i{left right}.each do |relation|
       define_method "#{relation}_lane" do
@@ -84,7 +121,7 @@ module MCM
 
 
     def update(seconds_passed)
-      if @cars
+      if @cars and @cars.size>0
         for car in @cars
           car.update(seconds_passed)
         end
@@ -208,7 +245,11 @@ module MCM
 
       previous_car = self.previous_car
       if previous_car 
-        new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way)
+        if @lane.inc_mp
+          new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way)
+        else
+          new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length)
+        end
       end
 
       @position = new_position
