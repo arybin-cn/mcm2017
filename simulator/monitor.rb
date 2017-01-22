@@ -1,3 +1,4 @@
+
 module MCM
   module Simulator
 
@@ -14,9 +15,10 @@ module MCM
 
       def print
         #Clear the screen.
-        #system('clear')
-        output = @roads.inject{|road_a,road_b| "#{road_a}\n\n#{road_b}"}
-        $stdout.print output+"\r"
+        system('clear')
+        for road in @roads
+          puts '',road
+        end
       end
 
     end

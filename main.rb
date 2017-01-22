@@ -3,6 +3,7 @@
 require 'pry'
 require 'csv'
 
+require './interpolator'
 require './model'
 require './simulator/virtual_machine'
 require './simulator/monitor'
@@ -10,6 +11,7 @@ require './simulator/monitor'
 include MCM
 include MCM::Simulator
 include MCM::Model
+
 
 #Raw string data
 @roads = [].tap do |roads|
@@ -85,6 +87,7 @@ end
   end
 end
 
+pry
 
 #Relations between models have been built from codes above.
 
@@ -98,8 +101,8 @@ monitor=RoadMonitor.new(route.roads[0..1])
 route.roads[0..1].each do |road|
   road.inc_lanes.each do |lane|
     cars=[]
-    3.times do
-      car=Car.new(nil,nil,1+rand(9))
+    8.times do
+      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
       car.lane=lane
       car.position=rand(road.length)
       cars<<car
@@ -109,8 +112,8 @@ route.roads[0..1].each do |road|
 
   road.dec_lanes.each do |lane|
     cars=[]
-    3.times do
-      car=Car.new(nil,nil,1+rand(9))
+    8.times do
+      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
       car.lane=lane
       car.position=rand(road.length)
       cars<<car
@@ -146,3 +149,6 @@ vm.start
 #end
 #lane.cars=cars
 #end
+
+
+Curses.close_screen
