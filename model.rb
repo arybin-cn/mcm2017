@@ -101,14 +101,14 @@ module MCM
           else
             #available_lane=random_select(@approaching_road.dec_lanes)
             available_lane=@approaching_road.dec_lanes.find do |lane|
-              lane.cars.size==0 or (lane.road.length-lane.cars.last.position > car.length)
+              lane.cars.size==0 or (lane.cars.last.position-lane.cars.last.length > car.length)
             end
           end
           if available_lane
             @cars.delete(car)
             available_lane.cars<<car
             car.lane=available_lane
-            car.position=inc_mp ? car.length : available_lane.road.length - car.length
+            car.position=car.length
           end
         end
       end
@@ -120,6 +120,7 @@ module MCM
   #As the given conditions, the width of lane is standard, so we dont consider width of lane here.
   #Insteand, we assume that a lane is always suitable for one car in parallel.
   class Model::Lane < Model::UpdatableModel
+    include Utils
     attr_accessor :road,:cars
     #true for INC-MP direction and false for DEC-MP direction.
     attr_accessor :inc_mp
@@ -152,23 +153,33 @@ module MCM
       end
     end
 
-    def nearest_car_in_front_of(position)
+    def previous_car(position)
       @cars.reverse_each.find{|car| car.position>position}
     end
-
-    def nearest_car_behind_of(position)
-      @cars.find{|car| car.position<position}
+    def distance_to_previous_car(position)
+      previous_car = self.previous_car(position)
+      (previous_car.position - previous_car.length - position) rescue -1
     end
 
+    def next_car(position)
+      @cars.each.find{|car| car.position<position}
+    end
+    def distance_to_next_car(position)
+      (position-self.next_car(position).position) rescue -1
+    end
+
+
     def to_s
-      direction=(self.inc_mp ? '>' : '<')
+      direction=(@inc_mp ? '>' : '<')
       raw=direction*@@screen_width_in_char+"\n"
       length=@road.length
-      for car in self.cars
-        raw[(@@screen_width_in_char*car.position/length).to_i]='?'
+      index_method=@inc_mp ? :rindex : :index
+      self.cars.each do |car|
+        index=(@@screen_width_in_char*car.position/length).to_i
+        raw[@inc_mp ? index : @@screen_width_in_char - index - 1]='?'
       end
-      for car in self.cars
-        raw[raw.index('?')]=direction.send("on_#{car.color}")
+      self.cars.each do |car|
+        raw[raw.send(index_method,'?')]=(car.character).send("on_#{car.color}")
       end
       raw
     rescue
@@ -187,6 +198,7 @@ module MCM
   # 1.normal
   # 2.overtake
   class Model::Car < Model::UpdatableModel
+    include Utils
     include Variables
     attr_accessor :start_intersection,:end_intersection,:speed,:length
     #The speed of acceleration
@@ -197,6 +209,8 @@ module MCM
     attr_accessor :position
     #Color was use in printing.
     attr_accessor :color
+    #Character use to identify
+    attr_accessor :character
     #Current running lane.
     attr_accessor :lane
     def initialize(start_intersection,end_intersection,initial_speed,length)
@@ -205,6 +219,7 @@ module MCM
       @end_intersection=end_intersection
       @length=length
       @color=String.rand_color
+      @character=random_select(('a'..'z').to_a)
     end
 
     #The car in front of current car in the same lane.
@@ -214,9 +229,9 @@ module MCM
       return @lane.cars[index-1]
     end
 
+    #return -1 if the car has no previous car.
     def distance_to_previous_car
-      previous_car=self.previous_car
-      (previous_car.position-previous_car.length-@position) rescue -1
+      (self.previous_car.position-self.previous_car.length-@position) rescue -1
     end
 
     #Stub Method for overwriting
@@ -240,7 +255,7 @@ module MCM
       @speed*self.reaction_time+(@speed**2 - previous_car.speed**2)/(2*5.88)
     end
 
-    def head_way
+    def headway
       self.safe_headway * self.headway_scale
     end
 
@@ -250,32 +265,36 @@ module MCM
     end
 
     def update(seconds_passed)
+      if @position >=@lane.road.length
+        @lane.cars.delete(self)
+        @lane=nil
+        return
+      end
+
+      case @state
+      when :normal
+      when :overtake
+      end
+
       #speed change
       new_speed=@speed #+ @acceleration_speed*seconds_passed
       new_speed=new_speed.bound(0,@@car_max_speed)
       #position change
-      new_position=@position+@speed*seconds_passed*(@lane.inc_mp ? 1 : -1)
+      new_position=@position+@speed*seconds_passed
       new_position=new_position.bound(0,@lane.road.length)
 
       previous_car=self.previous_car
-      if previous_car 
-        if @lane.inc_mp
-          new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way) do
-            @state=:overtake
-          end
-        else
-          new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length) do
-            @state=:overtake
-          end
+      if previous_car
+        new_position = new_position.bound(0,previous_car.position-previous_car.length - self.headway) do
+          #change to state: overtake
         end
       end
+
       @position = new_position
       @speed = new_speed
-      @lane.cars.delete(self) if @position >= @lane.road.length or @position <= 0
-
-      #if  @position >= @lane.road.length or @position <= 0
-      #  return @lane.cars.delete(self)
-      #end
+      if  @position >= @lane.road.length or @position <= 0
+        @lane.cars.delete(self)
+      end
       ##speed change
       #new_speed=@speed #+ @acceleration_speed*seconds_passed
       #new_speed=new_speed.bound(0,@@car_max_speed)
@@ -287,11 +306,11 @@ module MCM
       #  previous_car = self.previous_car
       # if previous_car 
       #   if @lane.inc_mp
-      #     new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way) do
+      #     new_position = new_position.bound(0,previous_car.position-previous_car.length-self.headway) do
       #       @state=:overtake
       #     end
       #   else
-      #     new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length) do
+      #     new_position = new_position.bound(previous_car.position+@length+self.headway,@lane.road.length) do
       #       @state=:overtake
       #     end
       #   end

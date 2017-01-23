@@ -95,10 +95,10 @@ end
 
 route = @routes.last
 #EventDriver (percentage_of_sdcars,target_route,total_count_of_cars,total_time)
-total_count_of_cars=5000
+total_count_of_cars=6000
 percentage_of_sdcars=0.3
-total_time=100
-total_interval_count=30
+total_time=1000
+total_interval_count=1000
 event_interval=1
 print_interval=1
 
