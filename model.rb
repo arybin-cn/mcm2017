@@ -32,6 +32,15 @@ module MCM
         road.update(seconds_passed)
       end
     end
+
+    def cars
+      cars=[].tap do |cars|
+        @roads.each do |road|
+          cars<<road.cars
+        end
+      end
+      cars.flatten.uniq
+    end
   end
 
   #Unit of length of road is mile.
@@ -45,6 +54,17 @@ module MCM
         '-'*@@screen_width_in_char+"\n"+
         dec_lanes.inject{|lane_a,lane_b| "#{lane_a}#{lane_b}"}+
         '#'*@@screen_width_in_char
+    end
+
+    def cars
+      cars=[].tap do |cars|
+        [@inc_lanes,@dec_lanes].each do |lanes|
+          lanes.each do |lane|
+            cars<<lane.cars
+          end
+        end
+      end
+      cars.flatten.uniq
     end
 
     def update(seconds_passed)
@@ -119,6 +139,10 @@ module MCM
       end
     end
 
+    def neighbour_lanes
+      [self.left_lane,self.right_lane]
+    end
+
 
     def update(seconds_passed)
       if @cars and @cars.size>0
@@ -160,10 +184,8 @@ module MCM
   #
   #
   #State:
-  # 0.on_start_intersection
   # 1.normal
-  # 2.prepared_to_overtake
-  # 3.on_end_intersection
+  # 2.overtake
   class Model::Car < Model::UpdatableModel
     include Variables
     attr_accessor :start_intersection,:end_intersection,:speed,:length
@@ -228,14 +250,6 @@ module MCM
     end
 
     def update(seconds_passed)
-
-      case @state
-      when :normal
-      when :at_start_intersection
-      when :at_end_intersection
-      when :prepared_to_overtake
-      end
-
       #speed change
       new_speed=@speed #+ @acceleration_speed*seconds_passed
       new_speed=new_speed.bound(0,@@car_max_speed)
@@ -243,19 +257,49 @@ module MCM
       new_position=@position+@speed*seconds_passed*(@lane.inc_mp ? 1 : -1)
       new_position=new_position.bound(0,@lane.road.length)
 
-      previous_car = self.previous_car
+      previous_car=self.previous_car
       if previous_car 
         if @lane.inc_mp
-          new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way)
+          new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way) do
+            @state=:overtake
+          end
         else
-          new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length)
+          new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length) do
+            @state=:overtake
+          end
         end
       end
-
       @position = new_position
       @speed = new_speed
       @lane.cars.delete(self) if @position >= @lane.road.length or @position <= 0
 
+      #if  @position >= @lane.road.length or @position <= 0
+      #  return @lane.cars.delete(self)
+      #end
+      ##speed change
+      #new_speed=@speed #+ @acceleration_speed*seconds_passed
+      #new_speed=new_speed.bound(0,@@car_max_speed)
+      ##position change
+      #new_position=@position+@speed*seconds_passed*(@lane.inc_mp ? 1 : -1)
+      #new_position=new_position.bound(0,@lane.road.length)
+      #case @state
+      #when :normal
+      #  previous_car = self.previous_car
+      # if previous_car 
+      #   if @lane.inc_mp
+      #     new_position = new_position.bound(0,previous_car.position-previous_car.length-self.head_way) do
+      #       @state=:overtake
+      #     end
+      #   else
+      #     new_position = new_position.bound(previous_car.position+@length+self.head_way,@lane.road.length) do
+      #       @state=:overtake
+      #     end
+      #   end
+      # end
+      #when :overtake
+      #  available_lane=@lane.neighbour_lanes.find do |lane|
+      #  end
+      #end
     end
 
     class Model::SelfdrivingCar < Model::Car

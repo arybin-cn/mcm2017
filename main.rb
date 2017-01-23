@@ -5,10 +5,11 @@ require 'csv'
 
 require './utils/object_selector'
 require './interpolator'
+require './datapicker'
 require './model'
-require './simulator/virtual_machine'
+require './simulator/event_machine'
 require './simulator/event_driver'
-require './simulator/monitor'
+require './simulator/event_monitor'
 
 include MCM
 include MCM::Model
@@ -94,22 +95,20 @@ end
 
 route = @routes.last
 #EventDriver (percentage_of_sdcars,target_route,total_count_of_cars,total_time)
-total_count_of_cars=50000
-percentage_of_sdcars=0.5
-total_time=1000
-total_interval_count=1000
+total_count_of_cars=5000
+percentage_of_sdcars=0.3
+total_time=100
+total_interval_count=30
 event_interval=1
 print_interval=1
 
 monitor=RoadMonitor.new(route.roads[0..3])
 #monitor=nil
-
 driver=CarGenerator.new(percentage_of_sdcars,route,total_count_of_cars,total_time)
+datapicker=DataPicker.new
 
-vm = VirtualMachine.new(total_interval_count,event_interval,print_interval,route,monitor,[driver])
-vm.start
+EventMachine.new(total_interval_count,event_interval,print_interval,route,[monitor],[driver],datapicker).start
 
-pry
 
 #route.roads[0..1].each do |road|
 #  road.inc_lanes.each do |lane|

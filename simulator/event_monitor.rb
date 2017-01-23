@@ -3,7 +3,7 @@ module MCM
   module Simulator
 
     class Monitor
-      def print
+      def update
       end
     end
 
@@ -13,7 +13,7 @@ module MCM
         @roads=roads
       end
 
-      def print
+      def update
         #Clear the screen.
         system('clear')
         for road in @roads
