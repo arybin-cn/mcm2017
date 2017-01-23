@@ -9,14 +9,17 @@ module MCM
 
 
     #Set global controllable variables as class variable below.
-    @@screen_width_in_char = 128
+    @@screen_width_in_char = 80
     #1 mile = 1609 meters
     @@scale_of_road_length = 1609
     #max speed of car(m/s), 60 miles/h = 26.82 m/s
     @@car_max_speed = 26.82
-
+    #random process of speed change
+    @@car_amplitude_of_speed_change = 0.1
+    #disturb scale
+    @@sdcar_disturb_scale = 0.2
     #abbr of technology leval which measures the degree of development of self-driving cars.
-    @@tech_lv=0.7
+    @@tech_lv=0.8
 
     #Note prefix cmcar_ means common cars and sdcar_ means self-driving cars
     #1.reaction time
@@ -26,8 +29,7 @@ module MCM
     @@cmcar_headway_scale = 1.8
     @@sdcar_headway_scale = 1.0/@@tech_lv
 
-    #3.probability of slowing
-    @@cmcar_slow_p = 0
+    #3.probability scale of accelerating
 
 
 

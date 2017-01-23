@@ -1,3 +1,4 @@
+Route_ID,startMilepost,endMilepost,Average daily traffic counts Year_2015,"RteType (IS= Interstate, SR= State Route)",Number of Lanes DECR MP direction ,Number of Lanes INCR MP direction
 5,100.93,101.87,65000,IS,3,3
 5,101.87,103.17,85000,IS,3,3
 5,103.17,103.42,108000,IS,3,3

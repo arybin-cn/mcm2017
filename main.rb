@@ -1,21 +1,29 @@
 #!/usr/bin/env ruby
 
-require 'pry'
 require 'csv'
 
+require './structure'
+
+require './model/route'
+require './model/road'
+require './model/lane'
+require './model/car'
+require './model/intersection'
+
 require './utils/object_selector'
-require './interpolator'
-require './datapicker'
-require './model'
-require './simulator/event_machine'
-require './simulator/event_driver'
-require './simulator/event_monitor'
+
+require './simulator/collector'
+require './simulator/machine'
+require './simulator/driver'
+require './simulator/monitor'
 
 include MCM
 include MCM::Model
 include MCM::Utils
 include MCM::Simulator
 
+#Start parsing data to build data structure.
+#############################################
 
 #Raw string data
 @roads = [].tap do |roads|
@@ -91,73 +99,18 @@ end
   end
 end
 
-#Relations between models have been built from codes above.
+#Succeed to parse given data.
+#############################################
 
-route = @routes.last
-#EventDriver (percentage_of_sdcars,target_route,total_count_of_cars,total_time)
-total_count_of_cars=6000
-percentage_of_sdcars=0.3
-total_time=1000
-total_interval_count=1000
+#Now check our model
+route=@routes.last
+total_count_of_cars=4000
+total_interval_count=50
 event_interval=1
 print_interval=1
+percentage_of_sdcars=0.4
 
+driver=CarGenerator.new(percentage_of_sdcars,route,total_count_of_cars,total_interval_count)
 monitor=RoadMonitor.new(route.roads[0..3])
-#monitor=nil
-driver=CarGenerator.new(percentage_of_sdcars,route,total_count_of_cars,total_time)
-datapicker=DataPicker.new
-
-EventMachine.new(total_interval_count,event_interval,print_interval,route,[monitor],[driver],datapicker).start
-
-
-#route.roads[0..1].each do |road|
-#  road.inc_lanes.each do |lane|
-#    cars=[]
-#    8.times do
-#      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
-#      car.lane=lane
-#      car.position=rand(road.length)
-#      cars<<car
-#    end
-#    lane.cars=cars
-#  end
-#
-#  road.dec_lanes.each do |lane|
-#    cars=[]
-#    8.times do
-#      car=CommonCar.new(nil,nil,1+rand(4),3.5+rand(1))
-#      car.lane=lane
-#      car.position=rand(road.length)
-#      cars<<car
-#    end
-#    lane.cars=cars
-#  end
-#end
-#
-#
-#vm = VirtualMachine.new(total_interval_count,event_interval,print_interval,route,monitor)
-#
-#vm.start
-
-
-
-#road = @routes.first.roads.find{|r| r.inc_lanes.size != r.dec_lanes.size}
-#road.inc_lanes.each do |lane|
-#cars=[]
-#20.times do
-#car=Car.new
-#car.position = rand(road.length)
-#cars<<car
-#end
-#lane.cars=cars
-#end
-#
-#road.dec_lanes.each do |lane|
-#cars=[]
-#20.times do
-#car=Car.new
-#car.position = rand(road.length)
-#cars<<car
-#end
-#lane.cars=cars
-#end
+collector=Collector.new
+Machine.new(total_interval_count,event_interval,print_interval,route,[monitor],[driver],collector).start

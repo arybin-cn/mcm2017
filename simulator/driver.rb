@@ -2,13 +2,13 @@ require './utils/object_selector'
 
 module MCM
   module Simulator
-    class EventDriver
+    class Driver
       #Stub Method for overwriting
       def update(seconds_passed)
       end
     end
 
-    class CarGenerator < EventDriver
+    class CarGenerator < Driver
       include ::MCM::Model
       include ::MCM::Variables
       include ::MCM::Utils
@@ -35,7 +35,7 @@ module MCM
           to=(intersections-[from]).first
           #(start_intersection,end_intersection,initial_speed,length)
           klass_of_car=weighted_select([CommonCar,SelfdrivingCar],[1-@percentage_of_sdcars,@percentage_of_sdcars])
-          car = klass_of_car.new(from,to,5+rand(@@car_max_speed-6),3.8+rand(1.0))
+          car = klass_of_car.new(from,to,9.0+rand(1+@@car_max_speed-9),3.8+rand(0.99))
           from.cars<<car
         end
       end

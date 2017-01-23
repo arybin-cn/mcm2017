@@ -8,6 +8,7 @@ module MCM
 
     def weighted_select(objs,weights)
       return nil if (objs.size != weights.size rescue true)
+      weights.map!{|x| 100*x}
       total_weight = weights.inject{|a,b| a+b}
       random = rand(total_weight)
       accumulated_weight = 0
