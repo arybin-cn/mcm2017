@@ -18,7 +18,7 @@ module MCM
     @@car_amplitude_of_speed_change = 0.1
     #disturb scale
     @@sdcar_disturb_scale = 0.2
-    #abbr of technology leval which measures the degree of development of self-driving cars.
+    #abbr of technology level which measures the degree of development of self-driving cars.
     @@tech_lv=0.8
 
     #Note prefix cmcar_ means common cars and sdcar_ means self-driving cars

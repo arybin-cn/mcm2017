@@ -1,7 +1,10 @@
 require './variables'
 require './utils/simple_accessor'
+require './utils/library_loader'
 require './utils/colorize_string'
 require './utils/bound_number'
+
+auto_require './interpolator/car/*'
 
 module MCM
   class Model::Car
@@ -142,6 +145,9 @@ module MCM
       if self.previous_car.is_a? Model::SelfdrivingCar 
         #disturbed
         @speed=@speed*(@@sdcar_disturb_scale*@@tech_lv)
+      end
+      Interpolator::Car.constants.each do |name|
+        Interpolator::Car.const_get(name).update(self)
       end
     rescue
     end

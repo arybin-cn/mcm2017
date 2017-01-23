@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'pry'
 require 'csv'
 
 require './structure'
